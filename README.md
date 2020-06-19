@@ -1,6 +1,6 @@
 disc
 =====
-light javascript wrapper around Discord API written on top of Deno
+light JavaScript wrapper around Discord API written on top of Deno
 
 
 goals

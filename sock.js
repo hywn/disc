@@ -1,8 +1,3 @@
-const send_json =
-	({ sock }) => json =>
-		sock.send(JSON.stringify(json))
-			.then(() => console.error(`---> ${JSON.stringify(json)}`))
-
 /*
 https://discord.com/developers/docs/topics/gateway#heartbeating
 If a client does not receive a heartbeat ack between its attempts at sending heartbeats, it should immediately terminate the connection with a non-1000 close code, reconnect, and attempt to resume.
@@ -10,7 +5,7 @@ If a client does not receive a heartbeat ack between its attempts at sending hea
 
 // did you know generators can only be iterated once
 const listen =
-	({ jsoner, listeners }) => async (...listeners) => {
+	jsoner => listeners => async () => {
 
 		console.error(`Listening with ${listeners.length} listeners...`)
 
@@ -26,11 +21,17 @@ const listen =
 
 	}
 
-const kill =
-	self => () => {
-		clearInterval(self.heartbeat_interval)
+const send_json =
+	sock => json =>
+		sock.send(JSON.stringify(json))
+			.then(() => console.error(`---> ${JSON.stringify(json)}`))
 
-		return self.sock.close()
+const kill =
+	sock => listeners => () => {
+		for (const listener of listeners)
+			listener({ broadcast: 'closing' })
+
+		return sock.close()
 			.catch(console.error)
 	}
 
@@ -52,31 +53,37 @@ const make_jsoner =
 	})
 
 const beaters =
-	self => {
+	send_json => {
+		let my_interval = null
 		let my_s = null
 
 		return [
 			({ op, d }) => {
 				if (op === 10) {
-					setInterval(() => self.send_json({ op: 1, d: my_s }), d.heartbeat_interval)
+					my_interval = setInterval(() => send_json({ op: 1, d: my_s }), d.heartbeat_interval)
 
 					return true
 				}
 			},
 
-			({ s }) => { if (s) my_s = s }
+			({ s, broadcast }) => {
+				if (broadcast === 'closing')
+					clearInterval(my_interval)
+
+				if (s)
+					my_s = s
+			}
 		]
 	}
 
 const new_discorder =
-	async sock => {
-		const self = { sock, s: null }
+	sock => listeners => {
 
-		self.jsoner = make_jsoner(sock)
+		self.send_json = send_json(sock)
+		self.listen    = listen(make_jsoner(sock))(listeners)
+		self.kill      = kill(sock)(listeners)
 
-		self.send_json = send_json(self)
-		self.listen    = (...listeners) => listen(self)(...listeners, ...beaters(self))
-		self.kill      = kill(self)
+		listeners.push(...beaters(self.send_json))
 
 		return self
 	}

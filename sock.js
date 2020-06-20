@@ -1,5 +1,9 @@
+import { connectWebSocket } from 'https://deno.land/std/ws/mod.ts'
+
+const gateway_url = 'wss://gateway.discord.gg/'
+
 const listen =
-	sock => listeners => async () => {
+	sock => async listeners => {
 		console.error(`==== Listening with ${listeners.length} listeners...`)
 
 		for await (const msg of sock) {
@@ -24,25 +28,27 @@ const send_json =
 			.then(() => console.error(`---> ${JSON.stringify(json)}`))
 
 const kill =
-	sock => listeners => () => {
-		for (const listener of listeners)
-			listener({ broadcast: 'closing' })
-
-		return sock.close()
+	sock => () =>
+		sock.close()
 			.catch(console.error)
-	}
 
 const new_discorder =
-	sock => (...self_listeners) => (...listeners) => {
+	async () => {
 		const self = {}
-		const ls = []
+		const sock = await connectWebSocket(gateway_url)
 
 		self.send_json = send_json(sock)
-		self.listen    = listen(sock)(ls)
-		self.kill      = kill(sock)(ls)
+		self.kill      = kill(sock)
+		self.listen    = (...listeners) => {
+			self.kill = () => {
+				for (const listener of listeners)
+					listener({ broadcast: 'closing' })
 
-		ls.push(...self_listeners.map(l => l(self)))
-		ls.push(...listeners)
+				return kill(sock)()
+			}
+
+			return listen(sock)(listeners)
+		}
 
 		return self
 	}

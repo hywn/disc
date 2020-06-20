@@ -1,5 +1,6 @@
 import base_new_discorder from './sock.js'
 
+// TODO: this would probably fit better into a 'misc util' file
 const new_dispatch_listener =
 	event_name => listener =>
 		json => {
@@ -7,57 +8,50 @@ const new_dispatch_listener =
 				listener(json)
 		}
 
-/********************************************/
-/** augmented discorder                    **/
-/** can handle frequently-used things like **/
-/** heartbeat and authentication           **/
-/********************************************/
+/*****************************************/
+/** 'standard discorder'                **/
+/** includes a heart and authentication **/
+/*****************************************/
 
 // Heart: heartbeat manager (https://discord.com/developers/docs/topics/gateway#heartbeating)
 // TODO: 'If a client does not receive a heartbeat ack between its attempts at sending heartbeats, it should immediately terminate the connection with a non-1000 close code, reconnect, and attempt to resume.'
-class Heart {
-	constructor() {
-		this.interval = null
-		this.s        = null
+const new_heart =
+	({ send_json }) => {
+		let my_interval = null
+		let my_s        = null
 
-		// self-listener that sets up loop that sends this.s to server
-		this.interval_setter = ({ send_json }) => ({ op, d }) => {
+		const interval_setter = ({ op, d }) => {
 			if (op !== 10)
 				return
 
-			this.interval = setInterval(() => send_json({ op: 1, d: this.s }), d.heartbeat_interval)
+			my_interval = setInterval(() => send_json({ op: 1, d: my_s }), d.heartbeat_interval)
 
 			return true
 		}
 
-		// listener that updates this.s
-		this.beater = ({ s, broadcast }) => {
+		const beater = ({ s, broadcast }) => {
 			if (s)
-				this.s = s
+				my_s = s
 			if (broadcast === 'closing')
-				clearInterval(this.interval)
+				clearInterval(my_interval)
 		}
+
+		return [interval_setter, beater]
 	}
-}
 
-const new_discorder =
-	sock => (...self_listeners) => (...listeners) => {
-		const heart = new Heart()
+const std_discorder =
+	token => async intents => {
 
-		const d = base_new_discorder
-			(sock)
-			(heart.interval_setter, ...self_listeners)
-			(heart.beater, ...listeners)
+		const d = await base_new_discorder()
 
-		d.auth =
-			token => intents =>
-				d.send_json({ op: 2, d: { token, intents, properties: {} } })
+		// attach heart
+		const old_listen = d.listen
+		d.listen = (...listeners) => old_listen(...new_heart(d), ...listeners)
+
+		// send auth
+		d.send_json({ op: 2, d: { token, intents, properties: {} } })
 
 		return d
 	}
 
-/*************/
-/** exports **/
-/*************/
-
-export { new_discorder, new_dispatch_listener }
+export { std_discorder, new_dispatch_listener }

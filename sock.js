@@ -1,8 +1,3 @@
-/*
-https://discord.com/developers/docs/topics/gateway#heartbeating
-If a client does not receive a heartbeat ack between its attempts at sending heartbeats, it should immediately terminate the connection with a non-1000 close code, reconnect, and attempt to resume.
-*/
-
 const listen =
 	sock => listeners => async () => {
 		console.error(`==== Listening with ${listeners.length} listeners...`)

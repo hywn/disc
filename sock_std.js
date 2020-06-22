@@ -1,17 +1,11 @@
 import base_new_discorder from './sock.js'
 
-// TODO: this would probably fit better into a 'misc util' file
 const new_dispatch_listener =
 	event_name => listener =>
 		json => {
 			if (json.op === 0 && json.t === event_name)
 				listener(json)
 		}
-
-/*****************************************/
-/** 'standard discorder'                **/
-/** includes a heart and authentication **/
-/*****************************************/
 
 // Heart: heartbeat manager (https://discord.com/developers/docs/topics/gateway#heartbeating)
 // TODO: 'If a client does not receive a heartbeat ack between its attempts at sending heartbeats, it should immediately terminate the connection with a non-1000 close code, reconnect, and attempt to resume.'
@@ -39,6 +33,7 @@ const new_heart =
 		return [interval_setter, beater]
 	}
 
+// a discorder but with auth and heartbeat
 const std_discorder =
 	token => async intents => {
 
@@ -54,4 +49,5 @@ const std_discorder =
 		return d
 	}
 
-export { std_discorder, new_dispatch_listener }
+export default std_discorder
+export { new_heart, new_dispatch_listener }

@@ -16,7 +16,7 @@ the following is a bot that replies to 'ping' DMs with a 'pong' and 🙂 reactio
 ```javascript
 import std_sender from './rest_std.js'
 import std_discorder from './sock_std.js'
-import { new_dispatch_listener } from '../disc/sock_std.js'
+import { new_dispatch_listener } from './sock_std.js'
 
 const token = 'my bot token'
 

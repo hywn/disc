@@ -1,5 +1,8 @@
 import base_new_discorder from './sock.js'
 
+/// <-- event name
+/// <-- f
+/// --> a listener that calls f(json) if json.op === 0 and json.t === event name
 const new_dispatch_listener =
 	event_name => listener =>
 		json => {
@@ -9,6 +12,8 @@ const new_dispatch_listener =
 
 // Heart: heartbeat manager (https://discord.com/developers/docs/topics/gateway#heartbeating)
 // TODO: 'If a client does not receive a heartbeat ack between its attempts at sending heartbeats, it should immediately terminate the connection with a non-1000 close code, reconnect, and attempt to resume.'
+/// <-- object containing a socket-bound send_json function
+/// --> [two listeners that manage gateway heartbeat]
 const new_heart =
 	({ send_json }) => {
 		let my_interval = null
@@ -33,7 +38,9 @@ const new_heart =
 		return [interval_setter, beater]
 	}
 
-// a discorder but with auth and heartbeat
+/// <-- auth token to send to Discord gateway API
+/// <-- intents to send to Discord gateway API
+/// ==> { send_json, kill, listen } but with auth and heartbeat preinstalled
 const std_discorder =
 	token => async intents => {
 

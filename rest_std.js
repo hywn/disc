@@ -19,8 +19,8 @@ const std = {
 	})
 }
 
-/* returns std but everything is bound to new_sender(auth)
-*/
+/// <-- authorization header value
+/// --> std but everything bound to new_sender(authorization header value)
 const std_sender =
 	auth => {
 		const sender = new_sender(auth)

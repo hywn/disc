@@ -1,8 +1,8 @@
 const base_rest_url = 'https://discord.com/api'
 
-/* takes Authorization header value and returns
-** a function that can be used to send stuff to the Discord API
-*/
+/// <-- authorization header
+/// <-- object { url: relative Discord API url, method: 'POST', 'GET', etc., body: request body }
+/// ==> a fetch call to the described Discord API
 const new_sender =
 	authorization => ({ url: relative_url, method, body }) => {
 		const options = {
